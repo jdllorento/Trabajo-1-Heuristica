@@ -43,7 +43,7 @@ def evaluate_schedule(start_times, n, m, machines, processing_times, release_dat
     machine_intervals = {k: [] for k in range(np.max(machines) + 1)}
     
     for i in range(n):
-        # Restricción: El trabajo no puede iniciar antes de su release date
+        # El trabajo no puede iniciar antes de su release date
         if start_times[i] < release_dates[i]:
             return False, float('inf')
         
@@ -58,16 +58,15 @@ def evaluate_schedule(start_times, n, m, machines, processing_times, release_dat
             
             # Revisar solapamientos en esta máquina
             for (s, e) in machine_intervals[machine]:
-                if not (end_op <= s or start_op >= e): # Hay solapamiento
+                if not (end_op <= s or start_op >= e):
                     return False, float('inf')
             
             # Registrar la operación en la máquina
             machine_intervals[machine].append((start_op, end_op))
             
-            # Avanzar el tiempo para la siguiente operación (No-Wait)
             current_time = end_op
             
-        # El tiempo de finalización del trabajo i es el current_time tras su última operación
+    
         completion_time = current_time
         total_flow_time += completion_time
         

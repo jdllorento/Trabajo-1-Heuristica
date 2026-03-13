@@ -26,3 +26,11 @@ def find_earliest_start_optimized(job_idx, m, machines, p_times, r_date, machine
         
         if not clash:
             return candidate_start
+        
+
+def get_job_offsets(m, processing_times_j):
+    """Calcula los desplazamientos fijos de cada operación respecto al inicio."""
+    offsets = np.zeros(m, dtype=int)
+    for u in range(1, m):
+        offsets[u] = offsets[u-1] + processing_times_j[u-1]
+    return offsets
