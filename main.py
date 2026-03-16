@@ -20,15 +20,15 @@ def main():
     INSTANCES_DIR = "NWJSSP Instances"
     
     # OPCIONES: "constructivo", "GRASP", "noise" o "todos"
-    ALGO_TO_RUN = "noise"
+    ALGO_TO_RUN = "constructivo"
     
     # Parámetros GRASP
-    NSOL_GRASP = 20
-    ALPHA = 0.1
+    NSOL_GRASP = 30
+    ALPHA = 0.4
 
     # Parámetros Noise
-    NSOL_NOISE = 20
-    NOISE_LEVEL = 0.2
+    NSOL_NOISE = 40
+    NOISE_LEVEL = 0.35
     # ==========================================================
 
     # Preparar lista de archivos
@@ -62,48 +62,48 @@ def main():
                 n_machines = int(line[1])
             
             # No ejecutar las instancias más grandes
-            if n_jobs > 100:
-                continue
+            if n_jobs <= 1000 and n_machines <= 100:
+                n, m, machines, p_times, r_dates = read_instance(file_path)
+                sheet_name = instance_file[:31]
 
-            n, m, machines, p_times, r_dates = read_instance(file_path)
-            sheet_name = instance_file[:31]
+                # --- BLOQUE EJECUCIÓN CONSTRUCTIVO ---
+                if "constructivo" in selected_algos:
+                    st_c, dur_c = solve_constructive(n, m, machines, p_times, r_dates)
+                    _, z_c = evaluate_schedule(st_c, n, m, machines, p_times, r_dates)
+                    pd.DataFrame([[z_c, dur_c], list(st_c)]).to_excel(writers["constructivo"], sheet_name=sheet_name, index=False, header=False)
+                    print(f"[{instance_file}] Constructivo -> Z: {z_c} | Tiempo: {dur_c}s")
 
-            # --- BLOQUE EJECUCIÓN CONSTRUCTIVO ---
-            if "constructivo" in selected_algos:
-                st_c, dur_c = solve_constructive(n, m, machines, p_times, r_dates)
-                _, z_c = evaluate_schedule(st_c, n, m, machines, p_times, r_dates)
-                pd.DataFrame([[z_c, dur_c], list(st_c)]).to_excel(writers["constructivo"], sheet_name=sheet_name, index=False, header=False)
-                print(f"[{instance_file}] Constructivo -> Z: {z_c} | Tiempo: {dur_c}ms | Factible: {_}")
+                # --- BLOQUE EJECUCIÓN GRASP ---
+                if "GRASP" in selected_algos:
+                    t_ini_g = time.time()
+                    best_z_g, best_st_g = float('inf'), None
+                    
+                    for _ in range(NSOL_GRASP):
+                        st_g = solve_grasp(n, m, machines, p_times, r_dates, ALPHA)
+                        _, z_g = evaluate_schedule(st_g, n, m, machines, p_times, r_dates)
+                        if z_g < best_z_g:
+                            best_z_g, best_st_g = z_g, st_g
+                    
+                    dur_g = round((time.time() - t_ini_g)*1000)
+                    pd.DataFrame([[best_z_g, dur_g], list(best_st_g)]).to_excel(writers["GRASP"], sheet_name=sheet_name, index=False, header=False)
+                    print(f"[{instance_file}] GRASP        -> Z: {best_z_g} | Tiempo: {dur_g}s")
 
-            # --- BLOQUE EJECUCIÓN GRASP ---
-            if "GRASP" in selected_algos:
-                t_ini_g = time.time()
-                best_z_g, best_st_g = float('inf'), None
-                
-                for _ in range(NSOL_GRASP):
-                    st_g = solve_grasp(n, m, machines, p_times, r_dates, ALPHA)
-                    _, z_g = evaluate_schedule(st_g, n, m, machines, p_times, r_dates)
-                    if z_g < best_z_g:
-                        best_z_g, best_st_g = z_g, st_g
-                
-                dur_g = int((time.time() - t_ini_g) * 1000)
-                pd.DataFrame([[best_z_g, dur_g], list(best_st_g)]).to_excel(writers["GRASP"], sheet_name=sheet_name, index=False, header=False)
-                print(f"[{instance_file}] GRASP        -> Z: {best_z_g} | Tiempo: {dur_g}ms | Factible: {_}")
+                # --- BLOQUE EJECUCIÓN NOISE ---
+                if "noise" in selected_algos:
+                    t_ini_n = time.time()
+                    best_z_n, best_st_n = float('inf'), None
+                    
+                    for _ in range(NSOL_NOISE):
+                        st_n = solve_noise(n, m, machines, p_times, r_dates, NOISE_LEVEL)
+                        _, z_n = evaluate_schedule(st_n, n, m, machines, p_times, r_dates)
+                        if z_n < best_z_n:
+                            best_z_n, best_st_n = z_n, st_n
+                    
+                    dur_n = round((time.time() - t_ini_n))
+                    pd.DataFrame([[best_z_n, dur_n], list(best_st_n)]).to_excel(writers["noise"], sheet_name=sheet_name, index=False, header=False)
+                    print(f"[{instance_file}] Noise        -> Z: {best_z_n} | Tiempo: {dur_n}s")
 
-            # --- BLOQUE EJECUCIÓN NOISE ---
-            if "noise" in selected_algos:
-                t_ini_n = time.time()
-                best_z_n, best_st_n = float('inf'), None
-                
-                for _ in range(NSOL_NOISE):
-                    st_n = solve_noise(n, m, machines, p_times, r_dates, NOISE_LEVEL)
-                    _, z_n = evaluate_schedule(st_n, n, m, machines, p_times, r_dates)
-                    if z_n < best_z_n:
-                        best_z_n, best_st_n = z_n, st_n
-                
-                dur_n = int((time.time() - t_ini_n) * 1000)
-                pd.DataFrame([[best_z_n, dur_n], list(best_st_n)]).to_excel(writers["noise"], sheet_name=sheet_name, index=False, header=False)
-                print(f"[{instance_file}] Noise        -> Z: {best_z_n} | Tiempo: {dur_n}ms | Factible: {_}")
+            
 
     finally:
         # Cerrar solo los escritores que se abrieron

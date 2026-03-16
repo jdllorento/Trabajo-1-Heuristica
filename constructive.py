@@ -35,6 +35,6 @@ def solve_constructive(n, m, machines, processing_times, release_dates):
             machine_usage[m_id].sort() 
 
     end_time_total = time.time()
-    execution_ms = int((end_time_total - start_time_total) * 1000)
+    execution_ms = int((end_time_total - start_time_total))
     
     return final_start_times, execution_ms

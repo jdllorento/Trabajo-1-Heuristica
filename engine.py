@@ -1,7 +1,6 @@
 import numpy as np
 
 def find_earliest_start_optimized(job_idx, m, machines, p_times, r_date, machine_usage):
-    # Calcular offsets una sola vez
     offsets = np.zeros(m, dtype=int)
     for u in range(1, m):
         offsets[u] = offsets[u-1] + p_times[job_idx, u-1]
