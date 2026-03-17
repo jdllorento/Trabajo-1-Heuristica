@@ -33,3 +33,12 @@ def get_job_offsets(m, processing_times_j):
     for u in range(1, m):
         offsets[u] = offsets[u-1] + processing_times_j[u-1]
     return offsets
+
+def calculate_lower_bound(p_times, r_dates):
+    """
+    Calcula la cota inferior para el Total Flow Time en NWJSSP.
+    LB = Sumatoria de (Fecha de liberación + Suma de tiempos de proceso por trabajo).
+    """
+    total_processing_per_job = np.sum(p_times, axis=1)
+    min_completion_times = r_dates + total_processing_per_job
+    return int(np.sum(min_completion_times))
